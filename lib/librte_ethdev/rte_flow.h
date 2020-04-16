@@ -2051,6 +2051,15 @@ enum rte_flow_action_type {
 	 * See struct rte_flow_action_set_dscp.
 	 */
 	RTE_FLOW_ACTION_TYPE_SET_IPV6_DSCP,
+
+	/**
+	 * Describes action reference.
+	 * 
+	 * Enables multiple rules use the same action by ID/ref.
+	 *
+	 * See struct rte_flow_action_indirect.
+	 */
+	RTE_FLOW_ACTION_TYPE_INDIRECT,
 };
 
 /**
@@ -2591,6 +2600,16 @@ struct rte_flow_action_set_meta {
  */
 struct rte_flow_action_set_dscp {
 	uint8_t dscp;
+};
+
+/**
+ * RTE_FLOW_ACTION_TYPE_INDIRECT,
+ * 
+ * Use action in multiple rules by id
+ *
+ */
+struct rte_flow_action_indirect {
+	uint64_t id;
 };
 
 /* Mbuf dynamic field offset for metadata. */
@@ -3223,6 +3242,114 @@ rte_flow_conv(enum rte_flow_conv_op op,
 	      size_t size,
 	      const void *src,
 	      struct rte_flow_error *error);
+
+/**
+ * TODO (AndreyV): general for action indirect
+ * 
+ * - add versiion 20.03 - see changes in lib/librte_ethdev/rte_ethdev_version.map
+ * 
+ */
+
+/**
+ * @warning
+ * @b EXPERIMENTAL: this API may change without prior notice.
+ *
+ * Registers the action for indirect access via id.
+ *
+ * @param[in] port_id
+ *    The port identifier of the Ethernet device.
+ * @param[in] action
+ *   Action to be registered for indirect access via id.
+ * @param[out] error
+ *   Perform verbose error reporting if not NULL. PMDs initialize this
+ *   structure in case of error only.
+ * @return
+ *   A valid handle in case of success, NULL otherwise and rte_errno is set
+ *   to one of the error codes defined:
+ *
+ *   -ENOSYS: underlying device does not support this functionality.
+ *
+ *   -EIO: underlying device is removed.
+ *
+ *   -EINVAL: unknown or invalid action specification.
+ *
+ *   -ENOTSUP: valid but unsupported action specification.
+ */
+__rte_experimental
+struct rte_flow_action_indirect *
+rte_flow_action_register(uint16_t port_id,
+		const struct rte_flow_action *action,
+		struct rte_flow_error *error);
+
+/**
+ * @warning
+ * @b EXPERIMENTAL: this API may change without prior notice.
+ *
+ * Unregisters the action for indirect access via id.
+ *
+ * @param[in] port_id
+ *    The port identifier of the Ethernet device.
+ * @param[in] indirect_action
+ *   Describes id of the action to be unregistered.
+ * @param[out] error
+ *   Perform verbose error reporting if not NULL. PMDs initialize this
+ *   structure in case of error only.
+ * @return
+ *   0 on sccess. A negative errno value *   otherwise (rte_errno is also
+ *   set), the following errors are defined:
+ *
+ *   -ENOSYS: underlying device does not support this functionality.
+ *
+ *   -EIO: underlying device is removed.
+ *
+ *   -EINVAL: unknown or invalid action specification.
+ * TODO (AndreyV): cnsider EEISTS
+ *
+ *   -ENOTSUP: valid but unsupported action specification.
+ * 
+ * TODO (AndreyV): error in case action still referenced by some rule
+ * 
+ * TODO (AndreyV): insread of unregister imple mark for unregister 
+ */
+__rte_experimental
+int
+rte_flow_action_unregister(uint16_t port_id,
+		const struct rte_flow_action_indirect *indirect_action,
+		struct rte_flow_error *error);
+
+/**
+ * @warning
+ * @b EXPERIMENTAL: this API may change without prior notice.
+ *
+ * Updates inplace the action registered via rte_flow_action_register()
+ *
+ * @param[in] port_id
+ *    The port identifier of the Ethernet device.
+ * @param[in] action
+ *   Action to be unregistered.
+ * @param[out] error
+ *   Perform verbose error reporting if not NULL. PMDs initialize this
+ *   structure in case of error only.
+ * @return
+ *   0 on sccess. A negative errno value *   otherwise (rte_errno is also
+ *   set), the following errors are defined:
+ *
+ *   -ENOSYS: underlying device does not support this functionality.
+ *
+ *   -EIO: underlying device is removed.
+ *
+ *   -EINVAL: unknown or invalid action specification.
+ * TODO (AndreyV): cnsider EEISTS
+ *
+ *   -ENOTSUP: valid but unsupported action specification.
+ */
+__rte_experimental
+int
+rte_flow_action_update(uint16_t port_id,
+		const struct rte_flow_action *action,
+		const struct rte_flow_action_indirect *indirect_action,
+		struct rte_flow_error *error);
+
 
 #ifdef __cplusplus
 }

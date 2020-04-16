@@ -1231,3 +1231,66 @@ rte_flow_dev_dump(uint16_t port_id, FILE *file, struct rte_flow_error *error)
 				  RTE_FLOW_ERROR_TYPE_UNSPECIFIED,
 				  NULL, rte_strerror(ENOSYS));
 }
+
+struct rte_flow_action_indirect *
+rte_flow_action_register(uint16_t port_id,
+		const struct rte_flow_action *action,
+		struct rte_flow_error *error)
+{
+	struct rte_eth_dev *dev = &rte_eth_devices[port_id];
+	struct rte_flow_action_indirect *indirect_action;
+	const struct rte_flow_ops *ops = rte_flow_ops_get(port_id, error);
+
+	if (unlikely(!ops))
+		return NULL;
+	if (likely(!!ops->action_register)) {
+		indirect_action = ops->action_register(dev, action, error);
+		if (indirect_action == NULL)
+			flow_err(port_id, -rte_errno, error);
+		return indirect_action;
+	}
+	rte_flow_error_set(error, ENOSYS, RTE_FLOW_ERROR_TYPE_UNSPECIFIED,
+			   NULL, rte_strerror(ENOSYS));
+	return NULL;
+}
+
+int
+rte_flow_action_unregister(uint16_t port_id,
+		const struct rte_flow_action_indirect *indirect_action,
+		struct rte_flow_error *error)
+{
+	(void)(port_id);
+	(void)(indirect_action);
+	(void)(error);
+
+	struct rte_eth_dev *dev = &rte_eth_devices[port_id];
+	const struct rte_flow_ops *ops = rte_flow_ops_get(port_id, error);
+
+	if (unlikely(!ops))
+		return -rte_errno;
+	if (likely(!!ops->action_unregister))
+		return flow_err(port_id, ops->action_unregister(dev, indirect_action, error),
+				error);
+	return rte_flow_error_set(error, ENOSYS,
+				  RTE_FLOW_ERROR_TYPE_UNSPECIFIED,
+				  NULL, rte_strerror(ENOSYS));
+}
+
+int
+rte_flow_action_update(uint16_t port_id,
+		const struct rte_flow_action *action,
+		const struct rte_flow_action_indirect *indirect_action,
+		struct rte_flow_error *error)
+{
+	struct rte_eth_dev *dev = &rte_eth_devices[port_id];
+	const struct rte_flow_ops *ops = rte_flow_ops_get(port_id, error);
+
+	if (unlikely(!ops))
+		return -rte_errno;
+	if (likely(!!ops->action_update))
+		return flow_err(port_id, ops->action_update(dev, action, indirect_action, error),
+				error);
+	return rte_flow_error_set(error, ENOSYS,
+				  RTE_FLOW_ERROR_TYPE_UNSPECIFIED,
+				  NULL, rte_strerror(ENOSYS));
+}
