@@ -1231,3 +1231,87 @@ rte_flow_dev_dump(uint16_t port_id, FILE *file, struct rte_flow_error *error)
 				  RTE_FLOW_ERROR_TYPE_UNSPECIFIED,
 				  NULL, rte_strerror(ENOSYS));
 }
+
+struct rte_flow_action_ctx *
+rte_flow_action_ctx_create(uint16_t port_id,
+		const struct rte_flow_action *action,
+		struct rte_flow_error *error)
+{
+	struct rte_eth_dev *dev = &rte_eth_devices[port_id];
+	struct rte_flow_action_ctx *indirect_action;
+	const struct rte_flow_ops *ops = rte_flow_ops_get(port_id, error);
+
+	if (unlikely(!ops))
+		return NULL;
+	if (likely(!!ops->action_ctx_create)) {
+		indirect_action = ops->action_ctx_create(dev, action, error);
+		if (indirect_action == NULL)
+			flow_err(port_id, -rte_errno, error);
+		return indirect_action;
+	}
+	rte_flow_error_set(error, ENOSYS, RTE_FLOW_ERROR_TYPE_UNSPECIFIED,
+			   NULL, rte_strerror(ENOSYS));
+	return NULL;
+}
+
+int
+rte_flow_action_ctx_destoy(uint16_t port_id,
+		struct rte_flow_action_ctx *indirect_action,
+		struct rte_flow_error *error)
+{
+	(void)(port_id);
+	(void)(indirect_action);
+	(void)(error);
+
+	struct rte_eth_dev *dev = &rte_eth_devices[port_id];
+	const struct rte_flow_ops *ops = rte_flow_ops_get(port_id, error);
+
+	if (unlikely(!ops))
+		return -rte_errno;
+	if (likely(!!ops->action_ctx_destroy))
+		return flow_err(port_id, ops->action_ctx_destroy(dev, indirect_action, error),
+				error);
+	return rte_flow_error_set(error, ENOSYS,
+				  RTE_FLOW_ERROR_TYPE_UNSPECIFIED,
+				  NULL, rte_strerror(ENOSYS));
+}
+
+int
+rte_flow_action_ctx_modify(uint16_t port_id,
+		struct rte_flow_action_ctx *action_ctx,
+		const void *action_conf,
+		struct rte_flow_error *error)
+{
+	struct rte_eth_dev *dev = &rte_eth_devices[port_id];
+	const struct rte_flow_ops *ops = rte_flow_ops_get(port_id, error);
+
+	if (unlikely(!ops))
+		return -rte_errno;
+	if (likely(!!ops->action_ctx_modify))
+		return flow_err(port_id, ops->action_ctx_modify(dev, action_ctx,
+				action_conf, error),
+			error);
+	return rte_flow_error_set(error, ENOSYS,
+				  RTE_FLOW_ERROR_TYPE_UNSPECIFIED,
+				  NULL, rte_strerror(ENOSYS));
+}
+
+int
+rte_flow_action_ctx_query(uint16_t port_id,
+	       const struct rte_flow_action_ctx *action_ctx,
+	       void *data,
+	       struct rte_flow_error *error)
+{
+	struct rte_eth_dev *dev = &rte_eth_devices[port_id];
+	const struct rte_flow_ops *ops = rte_flow_ops_get(port_id, error);
+
+	if (unlikely(!ops))
+		return -rte_errno;
+	if (likely(!!ops->action_ctx_query))
+		return flow_err(port_id, ops->action_ctx_query(dev, action_ctx,
+				data, error),
+			error);
+	return rte_flow_error_set(error, ENOSYS,
+				  RTE_FLOW_ERROR_TYPE_UNSPECIFIED,
+				  NULL, rte_strerror(ENOSYS));
+}

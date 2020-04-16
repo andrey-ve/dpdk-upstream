@@ -2051,6 +2051,15 @@ enum rte_flow_action_type {
 	 * See struct rte_flow_action_set_dscp.
 	 */
 	RTE_FLOW_ACTION_TYPE_SET_IPV6_DSCP,
+
+	/**
+	 * Describes action context.
+	 * 
+	 * Enables multiple rules reference the same action by id/ctx.
+	 *
+	 * See struct rte_flow_action_ctx.
+	 */
+	RTE_FLOW_ACTION_TYPE_CTX,
 };
 
 /**
@@ -2591,6 +2600,16 @@ struct rte_flow_action_set_meta {
  */
 struct rte_flow_action_set_dscp {
 	uint8_t dscp;
+};
+
+/**
+ * RTE_FLOW_ACTION_TYPE_CTX,
+ * 
+ * Reference action in multiple rules by id/ctx
+ *
+ */
+struct rte_flow_action_ctx {
+	uint64_t id;
 };
 
 /* Mbuf dynamic field offset for metadata. */
@@ -3223,6 +3242,147 @@ rte_flow_conv(enum rte_flow_conv_op op,
 	      size_t size,
 	      const void *src,
 	      struct rte_flow_error *error);
+
+/**
+ * TODO (AndreyV): general for action ctx
+ * 
+ * - add version 20.03 - see changes in lib/librte_ethdev/rte_ethdev_version.map
+ * 
+ */
+
+/**
+ * @warning
+ * @b EXPERIMENTAL: this API may change without prior notice.
+ *
+ * Create the action context pointing to the action via id/ctx.
+ *
+ * @param[in] port_id
+ *    The port identifier of the Ethernet device.
+ * @param[in] action
+ *   Action to be pointed via id/ctx.
+ * @param[out] error
+ *   Perform verbose error reporting if not NULL. PMDs initialize this
+ *   structure in case of error only.
+ * @return
+ *   A valid handle in case of success, NULL otherwise and rte_errno is set
+ *   to one of the error codes defined:
+ *
+ *   -ENOSYS: underlying device does not support this functionality.
+ *
+ *   -EIO: underlying device is removed.
+ *
+ *   -EINVAL: unknown or invalid action specification.
+ *
+ *   -ENOTSUP: valid but unsupported action specification.
+ */
+__rte_experimental
+struct rte_flow_action_ctx *
+rte_flow_action_ctx_create(uint16_t port_id,
+		const struct rte_flow_action *action,
+		struct rte_flow_error *error);
+
+/**
+ * @warning
+ * @b EXPERIMENTAL: this API may change without prior notice.
+ *
+ * Destroys the action pointed by action context.
+ *
+ * @param[in] port_id
+ *    The port identifier of the Ethernet device.
+ * @param[in] action_ctx
+ *   Describes id/ctx pinting to the action to be destroyed.
+ * @param[out] error
+ *   Perform verbose error reporting if not NULL. PMDs initialize this
+ *   structure in case of error only.
+ * @return
+ *   0 on success. A negative errno value otherwise (rte_errno is also
+ *   set), the following errors are defined:
+ *
+ *   -ENOSYS: underlying device does not support this functionality.
+ *
+ *   -EIO: underlying device is removed.
+ *
+ *   -EINVAL: unknown or invalid action specification.
+ *
+ *   -ENOTSUP: valid but unsupported action specification.
+ *
+ *   -ENOENT: action pointed by action ctx was not found
+ *
+ *   -ETOOMANYREFS: action still referenced by one ore more rules
+ */
+__rte_experimental
+int
+rte_flow_action_ctx_destoy(uint16_t port_id,
+		struct rte_flow_action_ctx *indirect_action,
+		struct rte_flow_error *error);
+
+/**
+ * @warning
+ * @b EXPERIMENTAL: this API may change without prior notice.
+ *
+ * Modifies inplace the action pointed by action context created via
+ * rte_flow_action_ctx_create().
+ *
+ * @param[in] port_id
+ *    The port identifier of the Ethernet device.
+ * @param[in] action_ctx
+ *   Action ctx pointing to the action to be modified.
+ * @param[in] action_conf
+ *   Action contents used to modify the action pointed by action_ctx.
+ *   action_conf should be of same type with the action pointed by action_ctx,
+ *   otherwise function behavior undefined.
+ * @param[out] error
+ *   Perform verbose error reporting if not NULL. PMDs initialize this
+ *   structure in case of error only.
+ * @return
+ *   0 on success. A negative errno value otherwise (rte_errno is also
+ *   set), the following errors are defined:
+ *
+ *   -ENOSYS: underlying device does not support this functionality.
+ *
+ *   -EIO: underlying device is removed.
+ *
+ *   -EINVAL: unknown or invalid action specification.
+ *
+ *   -ENOTSUP: valid but unsupported action specification.
+ * 
+ *   -ENOENT: action pointed by action ctx was not found
+ */
+__rte_experimental
+int
+rte_flow_action_ctx_modify(uint16_t port_id,
+		struct rte_flow_action_ctx *action_ctx,
+		const void *action_conf,
+		struct rte_flow_error *error);
+
+
+/**
+ * Query an existing action referenced via id/context.
+ *
+ * This function allows retrieving action-specific data such as counters.
+ * Data is gathered by special action which may be present/referenced in
+ * more than one flow rule definition.
+ *
+ * \see RTE_FLOW_ACTION_TYPE_COUNT
+ *
+ * @param port_id
+ *   Port identifier of Ethernet device.
+ * @param[in] action_ctx
+ *   Action ctx pointing to the action to query.
+ * @param[in, out] data
+ *   Pointer to storage for the associated query data type.
+ * @param[out] error
+ *   Perform verbose error reporting if not NULL. PMDs initialize this
+ *   structure in case of error only.
+ *
+ * @return
+ *   0 on success, a negative errno value otherwise and rte_errno is set.
+ */
+int
+rte_flow_action_ctx_query(uint16_t port_id,
+	       const struct rte_flow_action_ctx *action_ctx,
+	       void *data,
+	       struct rte_flow_error *error);
 
 #ifdef __cplusplus
 }

@@ -101,6 +101,28 @@ struct rte_flow_ops {
 		(struct rte_eth_dev *dev,
 		 FILE *file,
 		 struct rte_flow_error *error);
+	/** See rte_flow_action_ctx_destoy() */
+	struct rte_flow_action_ctx *(*action_ctx_create)
+		(struct rte_eth_dev *,
+		const struct rte_flow_action *,
+		struct rte_flow_error *);
+	/** See rte_flow_action_ctx_create() */
+	int (*action_ctx_destroy)
+		(struct rte_eth_dev *,
+		struct rte_flow_action_ctx *,
+		struct rte_flow_error *);
+	/** See rte_flow_action_ctx_modify() */
+	int (*action_ctx_modify)
+		(struct rte_eth_dev *,
+		struct rte_flow_action_ctx *,
+		const void *,
+		struct rte_flow_error *);
+	/** See rte_flow_action_ctx_query() */
+	int (*action_ctx_query)
+		(struct rte_eth_dev *,
+		const struct rte_flow_action_ctx *,
+		void *,
+		struct rte_flow_error *);
 };
 
 /**

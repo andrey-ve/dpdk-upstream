@@ -230,4 +230,9 @@ EXPERIMENTAL {
 
 	# added in 20.02
 	rte_flow_dev_dump;
+
+	# added in 20.03
+	rte_flow_action_ctx_create;
+	rte_flow_action_ctx_destoy;
+	rte_flow_action_ctx_modify;
 };
